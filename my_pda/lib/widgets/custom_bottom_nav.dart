@@ -4,8 +4,7 @@ class CustomBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int>? onTap;
 
-  const CustomBottomNav({Key? key, this.selectedIndex = 0, this.onTap})
-    : super(key: key);
+  const CustomBottomNav({super.key, this.selectedIndex = 0, this.onTap});
 
   @override
   Widget build(BuildContext context) {

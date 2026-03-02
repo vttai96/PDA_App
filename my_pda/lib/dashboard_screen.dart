@@ -7,6 +7,22 @@ class DashboardScreen extends StatelessWidget {
 
   const DashboardScreen({super.key, this.user});
 
+  Route _slideRoute(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0); // from right
+        const end = Offset.zero;
+        const curve = Curves.easeOut;
+        final tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
+        return SlideTransition(position: animation.drive(tween), child: child);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,13 +67,70 @@ class DashboardScreen extends StatelessWidget {
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1F2937),
-                borderRadius: BorderRadius.circular(8),
+            GestureDetector(
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (ctx) {
+                    return Dialog(
+                      backgroundColor: const Color(0xFF111827),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.notifications_active,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Thông báo',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Hiện tại bạn chưa có thông báo mới.',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('ĐÓNG'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1F2937),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.notifications, color: Colors.white),
               ),
-              child: const Icon(Icons.notifications, color: Colors.white),
             ),
           ],
         ),
@@ -502,10 +575,7 @@ class DashboardScreen extends StatelessWidget {
       bottomNavigationBar: CustomBottomNav(
         onTap: (index) {
           if (index == 2) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const HistoryScreen()),
-            );
+            Navigator.push(context, _slideRoute(const HistoryScreen()));
             return;
           }
         },

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'widgets/custom_bottom_nav.dart';
+import 'history_detail_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -88,6 +89,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
     return list;
   }
 
+  Route _slideRoute(Widget page) {
+    return PageRouteBuilder(
+      pageBuilder: (context, animation, secondaryAnimation) => page,
+      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+        const begin = Offset(1.0, 0.0); // from right
+        const end = Offset.zero;
+        const curve = Curves.easeOut;
+        final tween = Tween(
+          begin: begin,
+          end: end,
+        ).chain(CurveTween(curve: curve));
+        return SlideTransition(position: animation.drive(tween), child: child);
+      },
+    );
+  }
+
   Widget _statusPill(String text) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -127,99 +144,103 @@ class _HistoryScreenState extends State<HistoryScreen> {
     required String operator,
     required Widget status,
     bool highlighted = false,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1C395E),
-        borderRadius: BorderRadius.circular(12),
-        border: highlighted
-            ? Border.all(color: const Color(0xFFB7811B), width: 2)
-            : null,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: highlighted
-                  ? const Color(0xFF494031)
-                  : const Color(0xFF21364A),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: !highlighted
-                ? const Icon(
-                    Icons.local_mall,
-                    color: Color(0xFF137FEC),
-                    size: 28,
-                  )
-                : const Icon(
-                    Icons.warning_outlined,
-                    color: Color(0xFFF59E0B),
-                    size: 28,
-                  ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      '#$id',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1C395E),
+          borderRadius: BorderRadius.circular(12),
+          border: highlighted
+              ? Border.all(color: const Color(0xFFB7811B), width: 2)
+              : null,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: highlighted
+                    ? const Color(0xFF494031)
+                    : const Color(0xFF21364A),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: !highlighted
+                  ? const Icon(
+                      Icons.local_mall,
+                      color: Color(0xFF137FEC),
+                      size: 28,
+                    )
+                  : const Icon(
+                      Icons.warning_outlined,
+                      color: Color(0xFFF59E0B),
+                      size: 28,
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        '• $title',
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Text(
+                        '#$id',
                         style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 14,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.access_time,
-                      size: 14,
-                      color: Colors.white54,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      time,
-                      style: const TextStyle(
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          '• $title',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.access_time,
+                        size: 14,
                         color: Colors.white54,
-                        fontSize: 13,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'NV: $operator',
-                  style: const TextStyle(color: Colors.white54, fontSize: 13),
-                ),
-              ],
+                      const SizedBox(width: 6),
+                      Text(
+                        time,
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'NV: $operator',
+                    style: const TextStyle(color: Colors.white54, fontSize: 13),
+                  ),
+                ],
+              ),
             ),
-          ),
-          status,
-        ],
+            status,
+          ],
+        ),
       ),
     );
   }
@@ -366,6 +387,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     operator: r['operator']!,
                     status: _statusPill(r['status']!),
                     highlighted: r['highlight'] == 'true',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        _slideRoute(HistoryDetailScreen(record: r)),
+                      );
+                    },
                   ),
               ],
 
@@ -389,6 +416,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     time: r['time']!,
                     operator: r['operator']!,
                     status: _statusPill(r['status']!),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        _slideRoute(HistoryDetailScreen(record: r)),
+                      );
+                    },
                   ),
               ],
             ] else ...[
@@ -412,6 +445,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     time: r['time']!,
                     operator: r['operator']!,
                     status: _statusPill(r['status']!),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        _slideRoute(HistoryDetailScreen(record: r)),
+                      );
+                    },
                   ),
               ],
 
@@ -436,6 +475,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     operator: r['operator']!,
                     status: _statusPill(r['status']!),
                     highlighted: r['highlight'] == 'true',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        _slideRoute(HistoryDetailScreen(record: r)),
+                      );
+                    },
                   ),
               ],
             ],
