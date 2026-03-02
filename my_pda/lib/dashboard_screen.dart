@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'widgets/custom_bottom_nav.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Map<String, String?>? user;
@@ -497,19 +498,7 @@ class DashboardScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-        color: const Color(0xFF0B1220),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: const [
-            Icon(Icons.home, color: Colors.blue),
-            Icon(Icons.qr_code_scanner, color: Colors.white),
-            Icon(Icons.history, color: Colors.white),
-            Icon(Icons.settings, color: Colors.white),
-          ],
-        ),
-      ),
+      bottomNavigationBar: const CustomBottomNav(),
     );
   }
 }
