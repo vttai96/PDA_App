@@ -113,12 +113,16 @@ class BarcodeScannerScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.of(context).push(
+                    onPressed: () async {
+                      final result = await Navigator.of(context).push<bool>(
                         MaterialPageRoute(
                           builder: (_) => const BarcodeSuccessScreen(),
                         ),
                       );
+
+                      if (result == true) {
+                        Navigator.of(context).pop(true);
+                      }
                     },
                     child: const Text(
                       'Quét thành công',

@@ -22,44 +22,88 @@ class _IngredientConfig {
   });
 }
 
-class ScanDetailScreen extends StatelessWidget {
+class ScanDetailScreen extends StatefulWidget {
   const ScanDetailScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    const ingredients = <_IngredientConfig>[
-      _IngredientConfig(
+  State<ScanDetailScreen> createState() => _ScanDetailScreenState();
+}
+
+class _ScanDetailScreenState extends State<ScanDetailScreen> {
+  late List<_IngredientConfig> _ingredients;
+  int? _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _ingredients = <_IngredientConfig>[
+      const _IngredientConfig(
         type: _IngredientType.completed,
         name: 'Acetone',
         target: '100kg',
         status: 'Đã khớp',
       ),
-      _IngredientConfig(
+      const _IngredientConfig(
         type: _IngredientType.waiting,
         name: 'Ethyl Acetate',
         target: '250kg',
         subtitle: 'Đang chờ quét...',
       ),
-      _IngredientConfig(
+      const _IngredientConfig(
         type: _IngredientType.neutral,
         name: 'Isopropanol',
         target: '50kg',
         subtitle: 'Chờ xử lý',
       ),
-      _IngredientConfig(
+      const _IngredientConfig(
         type: _IngredientType.warning,
         name: 'Colorant Blue #5',
         target: '2kg',
         warning: 'Độ chính xác cao',
       ),
-      _IngredientConfig(
+      const _IngredientConfig(
         type: _IngredientType.neutral,
         name: 'Nước cất',
         target: '100kg',
         subtitle: 'Chờ xử lý',
       ),
     ];
+  }
 
+  Future<void> _handleScanTap() async {
+    if (_selectedIndex == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng chọn một nguyên liệu trước khi quét.'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+    );
+
+    if (result == true && _selectedIndex != null) {
+      setState(() {
+        // Tạo list mới để đảm bảo luôn mutable khi cập nhật phần tử
+        final newList = List<_IngredientConfig>.from(_ingredients);
+        final ing = newList[_selectedIndex!];
+        newList[_selectedIndex!] = _IngredientConfig(
+          type: _IngredientType.completed,
+          name: ing.name,
+          target: ing.target,
+          status: 'Đã khớp',
+        );
+        _ingredients = newList;
+        _selectedIndex = null;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0B0E11),
       appBar: AppBar(
@@ -110,32 +154,18 @@ class ScanDetailScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            // danh sách nguyên liệu được tạo từ list + for
-            for (final ingredient in ingredients) ...[
-              if (ingredient.type == _IngredientType.completed)
-                _buildIngredientCompleted(
-                  name: ingredient.name,
-                  target: ingredient.target,
-                  status: ingredient.status!,
-                )
-              else if (ingredient.type == _IngredientType.waiting)
-                _buildIngredientWaiting(
-                  name: ingredient.name,
-                  target: ingredient.target,
-                  subtitle: ingredient.subtitle!,
-                )
-              else if (ingredient.type == _IngredientType.neutral)
-                _buildIngredientNeutral(
-                  name: ingredient.name,
-                  target: ingredient.target,
-                  subtitle: ingredient.subtitle!,
-                )
-              else if (ingredient.type == _IngredientType.warning)
-                _buildIngredientWarning(
-                  name: ingredient.name,
-                  target: ingredient.target,
-                  warning: ingredient.warning!,
+            for (var i = 0; i < _ingredients.length; i++) ...[
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedIndex = i;
+                  });
+                },
+                child: _buildIngredientItem(
+                  ingredient: _ingredients[i],
+                  selected: _selectedIndex == i,
                 ),
+              ),
               const SizedBox(height: 12),
             ],
             const SizedBox(height: 32),
@@ -337,11 +367,7 @@ class ScanDetailScreen extends StatelessWidget {
   Widget _buildScanStatusCard(BuildContext context) {
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: () {
-        Navigator.of(
-          context,
-        ).push(MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()));
-      },
+      onTap: _handleScanTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(18),
@@ -418,6 +444,63 @@ class ScanDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildIngredientItem({
+    required _IngredientConfig ingredient,
+    required bool selected,
+  }) {
+    final borderColor = selected ? const Color(0xFF22C55E) : null;
+
+    if (ingredient.type == _IngredientType.completed) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor ?? const Color(0xFF1F2937)),
+        ),
+        child: _buildIngredientCompleted(
+          name: ingredient.name,
+          target: ingredient.target,
+          status: ingredient.status ?? 'Đã khớp',
+        ),
+      );
+    } else if (ingredient.type == _IngredientType.waiting) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor ?? const Color(0x00000000)),
+        ),
+        child: _buildIngredientWaiting(
+          name: ingredient.name,
+          target: ingredient.target,
+          subtitle: ingredient.subtitle ?? '',
+        ),
+      );
+    } else if (ingredient.type == _IngredientType.neutral) {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor ?? const Color(0x00000000)),
+        ),
+        child: _buildIngredientNeutral(
+          name: ingredient.name,
+          target: ingredient.target,
+          subtitle: ingredient.subtitle ?? '',
+        ),
+      );
+    } else {
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: borderColor ?? const Color(0x00000000)),
+        ),
+        child: _buildIngredientWarning(
+          name: ingredient.name,
+          target: ingredient.target,
+          warning: ingredient.warning ?? '',
+        ),
+      );
+    }
   }
 
   Widget _buildIngredientCompleted({

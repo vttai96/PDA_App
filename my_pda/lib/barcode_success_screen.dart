@@ -1,7 +1,55 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class BarcodeSuccessScreen extends StatelessWidget {
+class BarcodeSuccessScreen extends StatefulWidget {
   const BarcodeSuccessScreen({super.key});
+
+  @override
+  State<BarcodeSuccessScreen> createState() => _BarcodeSuccessScreenState();
+}
+
+class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
+  Timer? _autoBackTimer;
+  double _progress = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    const totalMillis = 3000;
+    const tickMillis = 100;
+
+    int elapsed = 0;
+    _autoBackTimer = Timer.periodic(const Duration(milliseconds: tickMillis), (
+      timer,
+    ) {
+      elapsed += tickMillis;
+      final newProgress = elapsed / totalMillis;
+
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (newProgress >= 1.0) {
+        setState(() {
+          _progress = 1.0;
+        });
+        timer.cancel();
+        Navigator.of(context).pop(true);
+      } else {
+        setState(() {
+          _progress = newProgress;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoBackTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -180,9 +228,9 @@ class BarcodeSuccessScreen extends StatelessWidget {
           elevation: 6,
         ),
         onPressed: () {
-          // Đóng 2 màn: success -> scanner -> quay lại trang công thức
-          Navigator.of(context).pop();
-          Navigator.of(context).pop();
+          // Huỷ timer (nếu còn) và trả kết quả thành công cho màn trước
+          _autoBackTimer?.cancel();
+          Navigator.of(context).pop(true);
         },
         child: const Text(
           'Về Trang Công Thức',
@@ -216,7 +264,7 @@ class BarcodeSuccessScreen extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(999),
                 child: LinearProgressIndicator(
-                  value: 0.8,
+                  value: _progress,
                   minHeight: 10,
                   backgroundColor: const Color(0xFF064E3B),
                   color: const Color(0xFF22C55E),
