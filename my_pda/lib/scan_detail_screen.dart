@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'manual_confirm_screen.dart';
+import 'barcode_scanner_screen.dart';
 
 enum _IngredientType { completed, waiting, neutral, warning }
 
@@ -98,7 +99,7 @@ class ScanDetailScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildMetricsRow(),
             const SizedBox(height: 16),
-            _buildScanStatusCard(),
+            _buildScanStatusCard(context),
             const SizedBox(height: 24),
             const Text(
               'Nguyên Liệu Yêu Cầu',
@@ -333,80 +334,88 @@ class ScanDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildScanStatusCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: const Color(0xFF137FEC),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.35),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF22C55E),
-                        shape: BoxShape.circle,
+  Widget _buildScanStatusCard(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()));
+      },
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF137FEC),
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF22C55E),
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'MÁY QUÉT ĐANG BẬT',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(width: 8),
+                      const Text(
+                        'MÁY QUÉT ĐANG BẬT',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Sẵn sàng quét',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    ],
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Hướng PDA vào mã vạch nguyên liệu',
-                  style: TextStyle(color: Color(0xFFC5DFFA), fontSize: 13),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Sẵn sàng quét',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Hướng PDA vào mã vạch nguyên liệu',
+                    style: TextStyle(color: Color(0xFFC5DFFA), fontSize: 13),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: const Color(0xFF4299F0),
-              border: Border.all(color: const Color(0xFF6AADF3), width: 2),
-              borderRadius: BorderRadius.circular(30),
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: const Color(0xFF4299F0),
+                border: Border.all(color: const Color(0xFF6AADF3), width: 2),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: const Icon(
+                Icons.qr_code_scanner,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
-            child: const Icon(
-              Icons.qr_code_scanner,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
