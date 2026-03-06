@@ -11,6 +11,7 @@ class BarcodeSuccessScreen extends StatefulWidget {
 
 class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
   Timer? _autoBackTimer;
+  int _secondsLeft = 3;
   double _progress = 0.0;
 
   @override
@@ -24,7 +25,13 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
       timer,
     ) {
       elapsed += tickMillis;
-      final newProgress = elapsed / totalMillis;
+      final clampedElapsed = elapsed.clamp(0, totalMillis);
+      final remainingMillis = (totalMillis - clampedElapsed).clamp(
+        0,
+        totalMillis,
+      );
+      final newProgress = clampedElapsed / totalMillis;
+      final secondsLeft = (remainingMillis / 1000).ceil();
 
       if (!mounted) {
         timer.cancel();
@@ -34,12 +41,14 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
       if (newProgress >= 1.0) {
         setState(() {
           _progress = 1.0;
+          _secondsLeft = 0;
         });
         timer.cancel();
         Navigator.of(context).pop(true);
       } else {
         setState(() {
           _progress = newProgress;
+          _secondsLeft = secondsLeft;
         });
       }
     });
@@ -272,9 +281,9 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
               ),
             ),
             const SizedBox(width: 12),
-            const Text(
-              '3s',
-              style: TextStyle(
+            Text(
+              '${_secondsLeft}s',
+              style: const TextStyle(
                 color: Color(0xFF22C55E),
                 fontSize: 18,
                 fontWeight: FontWeight.w700,

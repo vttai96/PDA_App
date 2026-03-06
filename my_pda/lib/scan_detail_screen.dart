@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'manual_confirm_screen.dart';
 import 'barcode_scanner_screen.dart';
+import 'scan_complete_screen.dart';
 
 enum _IngredientType { completed, waiting, neutral, warning }
 
@@ -11,6 +12,7 @@ class _IngredientConfig {
   final String? status;
   final String? subtitle;
   final String? warning;
+  final DateTime? scannedAt;
 
   const _IngredientConfig({
     required this.type,
@@ -19,6 +21,7 @@ class _IngredientConfig {
     this.status,
     this.subtitle,
     this.warning,
+    this.scannedAt,
   });
 }
 
@@ -36,6 +39,10 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _resetIngredients();
+  }
+
+  void _resetIngredients() {
     _ingredients = <_IngredientConfig>[
       const _IngredientConfig(
         type: _IngredientType.completed,
@@ -68,6 +75,12 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         subtitle: 'Chờ xử lý',
       ),
     ];
+
+    // Mặc định chọn nguyên liệu đang ở trạng thái waiting (nếu có)
+    final firstWaitingIndex = _ingredients.indexWhere(
+      (ing) => ing.type == _IngredientType.waiting,
+    );
+    _selectedIndex = firstWaitingIndex != -1 ? firstWaitingIndex : null;
   }
 
   Future<void> _handleScanTap() async {
@@ -89,21 +102,48 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       setState(() {
         // Tạo list mới để đảm bảo luôn mutable khi cập nhật phần tử
         final newList = List<_IngredientConfig>.from(_ingredients);
-        final ing = newList[_selectedIndex!];
-        newList[_selectedIndex!] = _IngredientConfig(
+        final currentIndex = _selectedIndex!;
+
+        // Cập nhật nguyên liệu hiện tại sang completed
+        final ing = newList[currentIndex];
+        newList[currentIndex] = _IngredientConfig(
           type: _IngredientType.completed,
           name: ing.name,
           target: ing.target,
           status: 'Đã khớp',
+          scannedAt: DateTime.now(),
         );
+
+        // Nếu còn nguyên liệu kế tiếp, chuyển sang trạng thái waiting
+        final nextIndex = currentIndex + 1;
+        if (nextIndex < newList.length) {
+          final nextIng = newList[nextIndex];
+          if (nextIng.type != _IngredientType.completed) {
+            newList[nextIndex] = _IngredientConfig(
+              type: _IngredientType.waiting,
+              name: nextIng.name,
+              target: nextIng.target,
+              subtitle: 'Đang chờ quét...',
+              scannedAt: nextIng.scannedAt,
+            );
+            _selectedIndex = nextIndex;
+          } else {
+            _selectedIndex = null;
+          }
+        } else {
+          _selectedIndex = null;
+        }
+
         _ingredients = newList;
-        _selectedIndex = null;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final allCompleted =
+        _ingredients.isNotEmpty &&
+        _ingredients.every((ing) => ing.type == _IngredientType.completed);
     return Scaffold(
       backgroundColor: const Color(0xFF0B0E11),
       appBar: AppBar(
@@ -125,10 +165,9 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12.0),
-            child: Container(
+            child: SizedBox(
               width: 32,
               height: 32,
-              decoration: BoxDecoration(color: const Color(0xFF111827)),
               child: const Icon(Icons.restore, color: Colors.blue, size: 28),
             ),
           ),
@@ -181,60 +220,105 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           top: false,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            child: Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFF374151)),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: const Text(
-                      'Bỏ qua',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF334155),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const ManualConfirmScreen(),
+            child: allCompleted
+                ? SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1D4ED8),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                      );
-                    },
-                    icon: const Icon(Icons.keyboard, size: 24),
-                    label: const Text(
-                      'Nhập thủ công',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
+                      ),
+                      onPressed: () {
+                        final summaryItems = _ingredients
+                            .map(
+                              (ing) => ScanCompleteItem(
+                                name: ing.name,
+                                target: ing.target,
+                                scannedAt: ing.scannedAt,
+                              ),
+                            )
+                            .toList();
+
+                        Navigator.of(context)
+                            .push<bool>(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    ScanCompleteScreen(items: summaryItems),
+                              ),
+                            )
+                            .then((nextTank) {
+                              if (nextTank == true) {
+                                setState(_resetIngredients);
+                              }
+                            });
+                      },
+                      child: const Text(
+                        'XÁC NHẬN VÀ KẾT THÚC',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
+                  )
+                : Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFF374151)),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          child: const Text(
+                            'Bỏ qua',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF334155),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const ManualConfirmScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.keyboard, size: 24),
+                          label: const Text(
+                            'Nhập thủ công',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
