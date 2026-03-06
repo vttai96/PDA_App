@@ -6,9 +6,9 @@ class BarcodeFailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF180B0B),
+      backgroundColor: const Color(0xFF221010),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF180B0B),
+        backgroundColor: const Color(0xFF221010),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
@@ -75,14 +75,14 @@ class BarcodeFailScreen extends StatelessWidget {
         height: 180,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFF3F0D0D),
+          color: const Color(0xFF370F0F),
           border: Border.all(color: const Color(0xFFFF3B30), width: 4),
         ),
         child: Center(
           child: Icon(
-            Icons.warning_amber_rounded,
-            size: 90,
-            color: const Color(0xFFFF3B30).withOpacity(0.95),
+            Icons.warning_outlined,
+            size: 100,
+            color: const Color(0xFFFF3B30).withValues(alpha: 0.95),
           ),
         ),
       ),
@@ -101,7 +101,7 @@ class BarcodeFailScreen extends StatelessWidget {
             borderRadius: BorderRadius.circular(18),
           ),
           elevation: 4,
-          shadowColor: const Color(0xFFFF3B30).withOpacity(0.5),
+          shadowColor: const Color(0xFFFF3B30).withValues(alpha: 0.5),
         ),
         onPressed: () {
           // Đóng màn lỗi và cho phép người dùng quét lại
@@ -129,7 +129,7 @@ class BarcodeFailScreen extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.info_outline, color: Color(0xFFF97316)),
+              Icon(Icons.info, color: Color(0xFFF20D0D)),
               SizedBox(width: 8),
               Text(
                 'CHI TIẾT LOGIC',
@@ -146,13 +146,13 @@ class BarcodeFailScreen extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
-              color: const Color(0xFF7F1D1D),
+              color: const Color(0xFF400E0E),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Text(
               'Lỗi: Vượt ngưỡng quy định',
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.redAccent,
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
               ),
@@ -161,7 +161,11 @@ class BarcodeFailScreen extends StatelessWidget {
           const SizedBox(height: 10),
           const Text(
             'Khối lượng quét + Khối lượng hiện tại > Khối lượng yêu cầu',
-            style: TextStyle(color: Color(0xFFE5E7EB), fontSize: 13),
+            style: TextStyle(
+              color: Color(0xFF8792A4),
+              fontSize: 13,
+              fontStyle: FontStyle.italic,
+            ),
           ),
         ],
       ),
@@ -176,12 +180,14 @@ class BarcodeFailScreen extends StatelessWidget {
           label: 'Khối lượng yêu cầu',
           value: '10.00 kg',
           highlightColor: const Color(0xFFE5E7EB),
+          icon: const Icon(Icons.track_changes),
         ),
         const Divider(color: Color(0xFF3F3F46), height: 24),
         _buildWeightRow(
           label: 'Khối lượng hiện tại',
           value: '8.50 kg',
           highlightColor: const Color(0xFFE5E7EB),
+          icon: const Icon(Icons.inventory),
         ),
         const SizedBox(height: 16),
         Container(
@@ -193,7 +199,8 @@ class BarcodeFailScreen extends StatelessWidget {
           child: _buildWeightRow(
             label: 'Khối lượng mới quét',
             value: '+ 2.00 kg',
-            highlightColor: const Color(0xFFFFE4E6),
+            highlightColor: const Color(0xFFF20D0D),
+            icon: const Icon(Icons.qr_code_scanner),
           ),
         ),
       ],
@@ -204,21 +211,28 @@ class BarcodeFailScreen extends StatelessWidget {
     required String label,
     required String value,
     required Color highlightColor,
+    required Icon icon,
   }) {
+    final displayValue = label == "Khối lượng mới quét"
+        ? Color(0xFFF20D0D)
+        : Color(0xFF9CA3AF);
+    final displayIcon = label == "Khối lượng mới quét"
+        ? Color(0xFFF20D0D)
+        : Color(0xFF9CA3AF);
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.radio_button_checked,
-              size: 16,
-              color: Color(0xFF9CA3AF),
-            ),
+            Icon(icon.icon, size: 16, color: displayIcon),
             const SizedBox(width: 8),
             Text(
               label,
-              style: const TextStyle(color: Color(0xFFE5E7EB), fontSize: 14),
+              style: TextStyle(
+                color: displayValue,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ],
         ),

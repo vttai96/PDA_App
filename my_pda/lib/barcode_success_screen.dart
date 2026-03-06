@@ -130,8 +130,8 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
         shape: BoxShape.circle,
         gradient: RadialGradient(
           colors: [
-            const Color(0xFF22C55E).withOpacity(0.8),
-            const Color(0xFF22C55E).withOpacity(0.0),
+            const Color(0xFF22C55E).withValues(alpha: 0.4),
+            const Color(0xFF22C55E).withValues(alpha: 0.0),
           ],
         ),
       ),
@@ -144,7 +144,11 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
             border: Border.all(color: const Color(0xFF22C55E), width: 5),
           ),
           child: const Center(
-            child: Icon(Icons.check, size: 64, color: Color(0xFF22C55E)),
+            child: Icon(
+              Icons.check_circle_rounded,
+              size: 64,
+              color: Color(0xFF22C55E),
+            ),
           ),
         ),
       ),
