@@ -446,156 +446,181 @@ class DashboardScreen extends StatelessWidget {
             // Big scan card (styled with corner markers, circular icon and pill)
             Expanded(
               child: Center(
-                child: Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF2B78FF),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        blurRadius: 12,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: Stack(
-                    children: [
-                      // corner markers
-                      Positioned(
-                        top: 12,
-                        left: 12,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: Colors.white24, width: 5),
-                              left: BorderSide(color: Colors.white24, width: 5),
-                            ),
-                            borderRadius: BorderRadius.circular(6),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        _slideRoute(const ScanDetailScreen()),
+                      );
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2B78FF),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.25),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
                           ),
-                        ),
+                        ],
                       ),
-                      Positioned(
-                        top: 12,
-                        right: 12,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              top: BorderSide(color: Colors.white24, width: 5),
-                              right: BorderSide(
-                                color: Colors.white24,
-                                width: 5,
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 12,
-                        left: 12,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.white24,
-                                width: 5,
-                              ),
-                              left: BorderSide(color: Colors.white24, width: 5),
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 12,
-                        right: 12,
-                        child: Container(
-                          width: 28,
-                          height: 28,
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: Colors.white24,
-                                width: 5,
-                              ),
-                              right: BorderSide(
-                                color: Colors.white24,
-                                width: 5,
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ),
-
-                      // center content
-                      Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 84,
-                              height: 84,
-                              margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(24),
+                      child: Stack(
+                        children: [
+                          // corner markers
+                          Positioned(
+                            top: 12,
+                            left: 12,
+                            child: Container(
+                              width: 28,
+                              height: 28,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF3EA0FF),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.25),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 6),
+                                border: Border(
+                                  top: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
                                   ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.qr_code_scanner,
-                                  size: 36,
-                                  color: Colors.white,
+                                  left: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
                                 ),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'QUÉT MÃ TANK',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 5.0,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 50,
-                                vertical: 8,
-                              ),
+                          ),
+                          Positioned(
+                            top: 12,
+                            right: 12,
+                            child: Container(
+                              width: 28,
+                              height: 28,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF1D63C9),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: const Text(
-                                'Nhấn để mở camera',
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
+                                border: Border(
+                                  top: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
+                                  right: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
                                 ),
+                                borderRadius: BorderRadius.circular(6),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          Positioned(
+                            bottom: 12,
+                            left: 12,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
+                                  left: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: 12,
+                            right: 12,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
+                                  right: BorderSide(
+                                    color: Colors.white24,
+                                    width: 5,
+                                  ),
+                                ),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                            ),
+                          ),
+
+                          // center content
+                          Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 84,
+                                  height: 84,
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF3EA0FF),
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(
+                                          alpha: 0.25,
+                                        ),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.qr_code_scanner,
+                                      size: 36,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'QUÉT MÃ TANK',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 5.0,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 50,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1D63C9),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: const Text(
+                                    'Nhấn để mở camera',
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ),
