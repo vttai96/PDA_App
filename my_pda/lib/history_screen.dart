@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'widgets/custom_bottom_nav.dart';
 import 'history_detail_screen.dart';
 import 'scan_detail_screen.dart';
+import 'dashboard_screen.dart';
+import 'settings_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -216,28 +218,31 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             color: Colors.white70,
                             fontSize: 14,
                           ),
-                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
                     ],
                   ),
                   const SizedBox(height: 10),
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       const Icon(
                         Icons.access_time,
-                        size: 14,
+                        size: 12,
                         color: Colors.white54,
                       ),
                       const SizedBox(width: 6),
-                      Text(
-                        time,
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 13,
+                      Expanded(
+                        child: Text(
+                          time,
+                          style: const TextStyle(
+                            color: Colors.white54,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      status,
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -248,7 +253,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
             ),
-            status,
           ],
         ),
       ),
@@ -517,8 +521,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
       bottomNavigationBar: CustomBottomNav(
         selectedIndex: 2,
         onTap: (index) {
-          // If user taps other tabs, go back to previous screen (Dashboard)
-          if (index != 2) Navigator.pop(context);
+          if (index == 0) {
+            // Về lại Dashboard gốc, xoá History khỏi stack nên không còn nút back
+            Navigator.popUntil(context, (route) => route.isFirst);
+            return;
+          }
+          if (index == 1) {
+            Navigator.push(context, _slideRoute(const ScanDetailScreen()));
+            return;
+          }
+          if (index == 2) {
+            // Đang ở tab lịch sử, không cần xử lý
+            return;
+          }
+          if (index == 3) {
+            Navigator.push(context, _slideRoute(const SettingsScreen()));
+            return;
+          }
         },
       ),
     );
