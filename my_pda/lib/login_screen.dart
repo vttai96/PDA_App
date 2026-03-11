@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _buildUserSelection() {
     return SizedBox(
-      height: 180, // hoặc Expanded nếu bạn dùng flex
+      height: 170, // hoặc Expanded nếu bạn dùng flex
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

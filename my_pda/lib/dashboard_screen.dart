@@ -161,13 +161,10 @@ class DashboardScreen extends StatelessWidget {
               'Bảng Điều Khiển',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 28,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 16),
-            // Shift card
-            // Shift card with optional left accent and custom status pill
             Builder(
               builder: (context) {
                 // Example data; replace with dynamic values as needed
@@ -306,7 +303,7 @@ class DashboardScreen extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 4),
             Row(
               children: [
                 // Completed card
@@ -348,7 +345,6 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const Spacer(),
                         const Text(
                           '12',
                           style: TextStyle(
@@ -414,7 +410,6 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                        const Spacer(),
                         const Text(
                           '5',
                           style: TextStyle(
@@ -441,7 +436,6 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
             // Big scan card (styled with corner markers, circular icon and pill)
             Expanded(
               child: Center(
@@ -467,7 +461,7 @@ class DashboardScreen extends StatelessWidget {
                           ),
                         ],
                       ),
-                      padding: const EdgeInsets.all(24),
+                      padding: const EdgeInsets.all(10),
                       child: Stack(
                         children: [
                           // corner markers
@@ -562,9 +556,9 @@ class DashboardScreen extends StatelessWidget {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
-                                  width: 84,
-                                  height: 84,
-                                  margin: const EdgeInsets.only(bottom: 16),
+                                  width: 100,
+                                  height: 100,
+                                  margin: const EdgeInsets.only(bottom: 12),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF3EA0FF),
                                     shape: BoxShape.circle,
@@ -586,7 +580,7 @@ class DashboardScreen extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                const SizedBox(height: 4),
                                 const Text(
                                   'QUÉT MÃ TANK',
                                   style: TextStyle(
@@ -596,10 +590,10 @@ class DashboardScreen extends StatelessWidget {
                                     letterSpacing: 5.0,
                                   ),
                                 ),
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 6),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
-                                    horizontal: 50,
+                                    horizontal: 40,
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
