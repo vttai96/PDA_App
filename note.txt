@@ -1,1 +1,3 @@
-Screen size: Samsung Galaxy A50
+Screen size: iphone SE
+
+flutter run -d 25315524701919 --device-timeout 60 --no-pub
