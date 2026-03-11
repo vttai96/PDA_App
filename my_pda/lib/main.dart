@@ -5,7 +5,16 @@ import 'login_screen.dart';
 
 void main() {
   runApp(
-    DevicePreview(enabled: !kReleaseMode, builder: (context) => const MyApp()),
+    DevicePreview(
+      enabled:
+          kDebugMode &&
+          (kIsWeb ||
+              ![
+                TargetPlatform.android,
+                TargetPlatform.iOS,
+              ].contains(defaultTargetPlatform)),
+      builder: (context) => const MyApp(),
+    ),
   );
 }
 

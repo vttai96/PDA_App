@@ -303,7 +303,7 @@ class DashboardScreen extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Row(
               children: [
                 // Completed card
@@ -481,8 +481,8 @@ class DashboardScreen extends StatelessWidget {
                         children: [
                           // corner markers
                           Positioned(
-                            top: 12,
-                            left: 12,
+                            top: 4,
+                            left: 4,
                             child: Container(
                               width: 28,
                               height: 28,
@@ -502,8 +502,8 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           Positioned(
-                            top: 12,
-                            right: 12,
+                            top: 4,
+                            right: 4,
                             child: Container(
                               width: 28,
                               height: 28,
@@ -523,8 +523,8 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           Positioned(
-                            bottom: 12,
-                            left: 12,
+                            bottom: 4,
+                            left: 4,
                             child: Container(
                               width: 28,
                               height: 28,
@@ -544,8 +544,8 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           Positioned(
-                            bottom: 12,
-                            right: 12,
+                            bottom: 4,
+                            right: 4,
                             child: Container(
                               width: 28,
                               height: 28,

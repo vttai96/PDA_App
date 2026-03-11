@@ -701,7 +701,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                   children: [
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
+                        horizontal: 4,
                         vertical: 3,
                       ),
                       decoration: BoxDecoration(
