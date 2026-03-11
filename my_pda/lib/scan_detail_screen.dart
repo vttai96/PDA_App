@@ -426,9 +426,13 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   }
 
   Widget _buildMetricsRow() {
+    final remainingCount = _ingredients
+        .where((ing) => ing.type != _IngredientType.completed)
+        .length;
+
     return Row(
-      children: const [
-        Expanded(
+      children: [
+        const Expanded(
           child: _MetricCard(
             label: 'MỤC TIÊU',
             value: '500',
@@ -436,13 +440,17 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
             highlight: true,
           ),
         ),
-        SizedBox(width: 10),
-        Expanded(
+        const SizedBox(width: 10),
+        const Expanded(
           child: _MetricCard(label: 'HIỆN TẠI', value: '120', unit: 'kg'),
         ),
-        SizedBox(width: 10),
+        const SizedBox(width: 10),
         Expanded(
-          child: _MetricCard(label: 'CÒN LẠI', value: '4', unit: 'mục'),
+          child: _MetricCard(
+            label: 'CÒN LẠI',
+            value: remainingCount.toString(),
+            unit: 'mục',
+          ),
         ),
       ],
     );
