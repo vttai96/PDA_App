@@ -61,7 +61,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     final trimmed = code.trim();
     if (trimmed.isEmpty) return;
 
-    // Nếu mở từ Dashboard: sau khi quét xong quay lại Dashboard luôn
     if (widget.fromDashboard) {
       Navigator.of(context).pop(trimmed);
       return;
@@ -131,8 +130,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                         onSubmitted: (value) {
                           _handleScanned(value);
                         },
-                        keyboardType: TextInputType
-                            .none, // Thử đổi sang text thay vì none để xem PDA có nhận diện không
+                        keyboardType: TextInputType.none,
                         decoration: const InputDecoration(
                           border: InputBorder.none,
                         ),

@@ -5,10 +5,17 @@ import 'settings_screen.dart';
 import 'scan_detail_screen.dart';
 import 'barcode_scanner_screen.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   final Map<String, String?>? user;
 
   const DashboardScreen({super.key, this.user});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  String? scannedCode;
 
   Route _slideRoute(Widget page) {
     return PageRouteBuilder(
@@ -41,7 +48,7 @@ class DashboardScreen extends StatelessWidget {
                 onTap: () {
                   Navigator.push(
                     context,
-                    _slideRoute(SettingsScreen(user: user)),
+                    _slideRoute(SettingsScreen(user: widget.user)),
                   );
                 },
                 child: Container(
@@ -66,16 +73,16 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    user?['name'] ?? 'Người dùng',
+                    widget.user?['name'] ?? 'Người dùng',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if ((user?['role'] ?? '').isNotEmpty)
+                  if ((widget.user?['role'] ?? '').isNotEmpty)
                     Text(
-                      user?['role'] ?? '',
+                      widget.user?['role'] ?? '',
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                 ],
@@ -458,13 +465,19 @@ class DashboardScreen extends StatelessWidget {
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
+                    onTap: () async {
+                      final result = await Navigator.push(
                         context,
                         _slideRoute(
                           const BarcodeScannerScreen(fromDashboard: true),
                         ),
                       );
+
+                      if (result != null) {
+                        setState(() {
+                          scannedCode = result;
+                        });
+                      }
                     },
                     child: Container(
                       width: double.infinity,
@@ -599,9 +612,9 @@ class DashboardScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  'QUÉT MÃ TANK',
-                                  style: TextStyle(
+                                Text(
+                                  scannedCode ?? 'QUÉT MÃ TANK',
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 24,
                                     fontWeight: FontWeight.bold,
@@ -646,11 +659,17 @@ class DashboardScreen extends StatelessWidget {
             return;
           }
           if (index == 2) {
-            Navigator.push(context, _slideRoute(HistoryScreen(user: user)));
+            Navigator.push(
+              context,
+              _slideRoute(HistoryScreen(user: widget.user)),
+            );
             return;
           }
           if (index == 3) {
-            Navigator.push(context, _slideRoute(SettingsScreen(user: user)));
+            Navigator.push(
+              context,
+              _slideRoute(SettingsScreen(user: widget.user)),
+            );
             return;
           }
         },
