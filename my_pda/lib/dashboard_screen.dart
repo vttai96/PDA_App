@@ -7,7 +7,7 @@ import 'scan_detail_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'config/api_config.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Map<String, String?>? user;
@@ -20,7 +20,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String? scannedCode;
-  final baseUrl = dotenv.env['API_BASE_URL'];
 
   Route _slideRoute(Widget page) {
     return PageRouteBuilder(
@@ -41,7 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<Map<String, String>> _getRecipeId(String code) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/getRecipeId'),
+        Uri.parse('${ApiConfig.baseUrl}/getRecipeId'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'TankNumber': code}),
       );
@@ -70,7 +69,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/getRecipeDetails'),
+        Uri.parse('${ApiConfig.baseUrl}/getRecipeDetails'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'ProductionOrder': productionOrder,
