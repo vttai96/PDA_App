@@ -120,16 +120,22 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                   // TextField ẩn để nhận dữ liệu từ PDA (keyboard wedge)
                   Opacity(
                     opacity: 0,
-                    child: TextField(
-                      controller: _controller,
-                      focusNode: _focusNode,
-                      autofocus: true,
-                      showCursor: false, // Ẩn con trỏ chuột
-                      keyboardType: TextInputType.none,
-                      onSubmitted: _handleScanned,
-                      decoration: const InputDecoration(
-                        border:
-                            InputBorder.none, // Ẩn hoàn toàn TextField khỏi UI
+                    child: SizedBox(
+                      height: 1,
+                      width: 1,
+                      child: TextField(
+                        controller: _controller,
+                        focusNode: _focusNode,
+                        autofocus: true,
+                        showCursor: false,
+                        onSubmitted: (value) {
+                          _handleScanned(value);
+                        },
+                        keyboardType: TextInputType
+                            .none, // Thử đổi sang text thay vì none để xem PDA có nhận diện không
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
                   ),
