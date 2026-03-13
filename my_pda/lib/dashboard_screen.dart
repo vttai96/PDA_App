@@ -23,20 +23,69 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<IngredientModel> _recipeIngredients = const [];
   bool _isLoadingIngredients = false;
 
-  String _notificationMessage() {
-    if (_isLoadingIngredients) {
-      return 'Đang tải danh sách nguyên liệu cho tank hiện tại.';
+  Future<void> _showNotificationDialog(
+    BuildContext context, {
+    required String message,
+    bool autoClose = false,
+  }) async {
+    final navigator = Navigator.of(context, rootNavigator: true);
+
+    if (autoClose) {
+      Future.delayed(const Duration(seconds: 3), () {
+        if (navigator.mounted && navigator.canPop()) {
+          navigator.pop();
+        }
+      });
     }
 
-    if (scannedCode == null) {
-      return 'Chưa có tank nào được quét.';
-    }
-
-    if (_recipeIngredients.isEmpty) {
-      return 'Tank $scannedCode hiện chưa có nguyên liệu nào.';
-    }
-
-    return 'Tank $scannedCode hiện có ${_recipeIngredients.length} nguyên liệu đã được tải.';
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (ctx) {
+        return Dialog(
+          backgroundColor: const Color(0xFF111827),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.notifications_active, color: Colors.white),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Thông báo',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  message,
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text('ĐÓNG'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Route _slideRoute(Widget page) {
@@ -184,58 +233,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (ctx) {
-                      return Dialog(
-                        backgroundColor: const Color(0xFF111827),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.notifications_active,
-                                    color: Colors.white,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  const Text(
-                                    'Thông báo',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                _notificationMessage(),
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () => Navigator.of(ctx).pop(),
-                                  child: const Text('ĐÓNG'),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                  _showNotificationDialog(
+                    context,
+                    message: 'Hiện tại bạn chưa có thông báo mới.',
                   );
                 },
                 child: Container(
@@ -579,6 +579,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _recipeIngredients = recipeDetails ?? [];
                           _isLoadingIngredients = false;
                         });
+
+                        final message = recipeDetails == null
+                            ? 'Không lấy được danh sách nguyên liệu cho tank $result.'
+                            : _recipeIngredients.isEmpty
+                            ? 'Tank $result không có nguyên liệu nào.'
+                            : 'Tank $result có ${_recipeIngredients.length} nguyên liệu.';
+
+                        _showNotificationDialog(
+                          context,
+                          message: message,
+                          autoClose: true,
+                        );
                       }
                     },
                     child: Container(
@@ -723,24 +735,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     letterSpacing: 5.0,
                                   ),
                                 ),
-                                const SizedBox(height: 6),
-                                if (_isLoadingIngredients)
-                                  const Padding(
-                                    padding: EdgeInsets.only(bottom: 10),
-                                    child: SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.2,
-                                        valueColor:
-                                            AlwaysStoppedAnimation<Color>(
-                                              Colors.white,
-                                            ),
-                                      ),
-                                    ),
-                                  )
-                                else
-                                  const SizedBox(height: 10),
+                                const SizedBox(height: 5),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 40,

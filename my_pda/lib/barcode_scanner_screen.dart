@@ -181,16 +181,6 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Đang quét: $_displayIngredientName',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
                   const Text(
                     'Hệ thống sẽ tự động nhận diện khi quét thành công.',
                     textAlign: TextAlign.center,
