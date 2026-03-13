@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class BarcodeSuccessScreen extends StatefulWidget {
-  final String scannedCode;
+  final String ingredientName;
 
-  const BarcodeSuccessScreen({super.key, required this.scannedCode});
+  const BarcodeSuccessScreen({super.key, required this.ingredientName});
 
   @override
   State<BarcodeSuccessScreen> createState() => _BarcodeSuccessScreenState();
@@ -101,9 +101,8 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            // Hiển thị rõ mã vạch vừa quét
             Text(
-              'Mã vạch: ${widget.scannedCode}',
+              'Nguyên liệu: ${widget.ingredientName}',
               textAlign: TextAlign.center,
               style: const TextStyle(
                 color: Colors.white,
@@ -191,13 +190,13 @@ class _BarcodeSuccessScreenState extends State<BarcodeSuccessScreen> {
             children: [
               const Expanded(
                 child: Text(
-                  'Mã vạch đã quét',
+                  'Nguyên liệu đang quét',
                   style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
                 ),
               ),
               Expanded(
                 child: Text(
-                  widget.scannedCode,
+                  widget.ingredientName,
                   textAlign: TextAlign.right,
                   style: const TextStyle(
                     color: Colors.white,

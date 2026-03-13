@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'manual_confirm_screen.dart';
 import 'barcode_scanner_screen.dart';
 import 'scan_complete_screen.dart';
+import 'models/ingredient.dart';
 
 enum _IngredientType { completed, waiting, neutral, warning }
 
@@ -26,7 +27,9 @@ class _IngredientConfig {
 }
 
 class ScanDetailScreen extends StatefulWidget {
-  const ScanDetailScreen({super.key});
+  final List<IngredientModel> ingredients;
+
+  const ScanDetailScreen({super.key, this.ingredients = const []});
 
   @override
   State<ScanDetailScreen> createState() => _ScanDetailScreenState();
@@ -42,48 +45,55 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     _resetIngredients();
   }
 
-  void _resetIngredients() {
-    _ingredients = <_IngredientConfig>[
-      const _IngredientConfig(
-        type: _IngredientType.completed,
-        name: 'Acetone',
-        target: '100kg',
-        status: 'Đã khớp',
-      ),
-      const _IngredientConfig(
-        type: _IngredientType.waiting,
-        name: 'Ethyl Acetate',
-        target: '250kg',
-        subtitle: 'Đang chờ quét...',
-      ),
-      const _IngredientConfig(
-        type: _IngredientType.neutral,
-        name: 'Isopropanol',
-        target: '50kg',
-        subtitle: 'Chờ xử lý',
-      ),
-      const _IngredientConfig(
-        type: _IngredientType.warning,
-        name: 'Colorant Blue #5',
-        target: '2kg',
-        warning: 'Độ chính xác cao',
-      ),
-      const _IngredientConfig(
-        type: _IngredientType.neutral,
-        name: 'Nước cất',
-        target: '100kg',
-        subtitle: 'Chờ xử lý',
-      ),
-    ];
+  String _formatTarget(double qty, String unit) {
+    final displayQty = qty == qty.truncateToDouble()
+        ? qty.toInt().toString()
+        : qty.toString();
+    return '$displayQty $unit';
+  }
 
-    // Mặc định chọn nguyên liệu đang ở trạng thái waiting (nếu có)
-    final firstWaitingIndex = _ingredients.indexWhere(
-      (ing) => ing.type == _IngredientType.waiting,
-    );
-    _selectedIndex = firstWaitingIndex != -1 ? firstWaitingIndex : null;
+  void _resetIngredients() {
+    final source = widget.ingredients;
+
+    if (source.isEmpty) {
+      _ingredients = [];
+      _selectedIndex = null;
+      return;
+    }
+
+    _ingredients = List.generate(source.length, (i) {
+      final ing = source[i];
+      final target = _formatTarget(ing.quantity, ing.unitOfMeasurement);
+      if (i == 0) {
+        return _IngredientConfig(
+          type: _IngredientType.waiting,
+          name: ing.ingredientName,
+          target: target,
+          subtitle: 'Đang chờ quét...',
+        );
+      }
+      return _IngredientConfig(
+        type: _IngredientType.neutral,
+        name: ing.ingredientName,
+        target: target,
+        subtitle: 'Chờ xử lý',
+      );
+    });
+
+    _selectedIndex = 0;
   }
 
   Future<void> _handleScanTap() async {
+    if (_ingredients.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Không có nguyên liệu để quét.'),
+          duration: Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+
     if (_selectedIndex == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -95,7 +105,11 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     }
 
     final result = await Navigator.of(context).push<bool>(
-      MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
+      MaterialPageRoute(
+        builder: (_) => BarcodeScannerScreen(
+          ingredientName: _ingredients[_selectedIndex!].name,
+        ),
+      ),
     );
 
     if (result == true && _selectedIndex != null) {
@@ -193,6 +207,44 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            if (_ingredients.isEmpty)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 40,
+                  horizontal: 16,
+                ),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF1F2937)),
+                ),
+                child: const Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.inventory_2_outlined,
+                      color: Color(0xFF374151),
+                      size: 48,
+                    ),
+                    SizedBox(height: 12),
+                    Text(
+                      'Không có nguyên liệu',
+                      style: TextStyle(
+                        color: Color(0xFF6B7280),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Công thức này không có nguyên liệu nào\nhoặc dữ liệu chưa được tải.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Color(0xFF4B5563), fontSize: 13),
+                    ),
+                  ],
+                ),
+              ),
             for (var i = 0; i < _ingredients.length; i++) ...[
               GestureDetector(
                 onTap: () {
@@ -395,7 +447,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                     const SizedBox(width: 4),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
+                        horizontal: 5,
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
@@ -725,7 +777,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 4),
                     Text(
                       subtitle,
                       style: const TextStyle(

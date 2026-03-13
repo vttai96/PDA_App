@@ -8,8 +8,13 @@ import 'barcode_success_screen.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final bool fromDashboard;
+  final String? ingredientName;
 
-  const BarcodeScannerScreen({super.key, this.fromDashboard = false});
+  const BarcodeScannerScreen({
+    super.key,
+    this.fromDashboard = false,
+    this.ingredientName,
+  });
 
   @override
   State<BarcodeScannerScreen> createState() => _BarcodeScannerScreenState();
@@ -21,6 +26,11 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
   Timer? _scanDebounce;
   bool _isProcessingScan = false;
+
+  String get _displayIngredientName {
+    final name = widget.ingredientName?.trim() ?? '';
+    return name.isEmpty ? 'Nguyên liệu đang quét' : name;
+  }
 
   @override
   void initState() {
@@ -70,8 +80,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     // Ngữ cảnh khác: hiển thị màn hình thành công/thất bại
     final result = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
-        builder: (_) => BarcodeSuccessScreen(scannedCode: trimmed),
-        // builder: (_) => const BarcodeFailScreen(),
+        builder: (_) =>
+            BarcodeSuccessScreen(ingredientName: _displayIngredientName),
+        // builder: (_) => BarcodeFailScreen(ingredientName: _displayIngredientName),
       ),
     );
 
@@ -166,6 +177,16 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Đang quét: $_displayIngredientName',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
                     ),
                   ),

@@ -20,6 +20,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   String? scannedCode;
+  List<IngredientModel> _recipeIngredients = const [];
+  bool _isLoadingIngredients = false;
 
   Route _slideRoute(Widget page) {
     return PageRouteBuilder(
@@ -550,9 +552,32 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       if (result != null) {
                         setState(() {
                           scannedCode = result;
+                          _isLoadingIngredients = true;
                         });
 
-                        var recipeDetails = await _getRecipeDetails(result);
+                        final recipeDetails = await _getRecipeDetails(result);
+
+                        if (!context.mounted) return;
+
+                        setState(() {
+                          _recipeIngredients = recipeDetails ?? [];
+                          _isLoadingIngredients = false;
+                        });
+
+                        final hasIngredients = recipeDetails != null;
+                        final ingredientCount = _recipeIngredients.length;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              hasIngredients
+                                  ? ingredientCount > 0
+                                        ? 'Đã tải $ingredientCount nguyên liệu. Vào Chi tiết để bắt đầu quét.'
+                                        : 'Công thức không có nguyên liệu. Vào Chi tiết để xem thông tin.'
+                                  : 'Không lấy được danh sách nguyên liệu cho tank này.',
+                            ),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
                       }
                     },
                     child: Container(
@@ -698,6 +723,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 6),
+                                if (_isLoadingIngredients)
+                                  const Padding(
+                                    padding: EdgeInsets.only(bottom: 10),
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.2,
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                              Colors.white,
+                                            ),
+                                      ),
+                                    ),
+                                  )
+                                else if (scannedCode != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(bottom: 10),
+                                    child: Text(
+                                      _recipeIngredients.isEmpty
+                                          ? 'Chưa có nguyên liệu được tải'
+                                          : 'Đã tải ${_recipeIngredients.length} nguyên liệu',
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 40,
@@ -731,7 +785,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: CustomBottomNav(
         onTap: (index) {
           if (index == 1) {
-            Navigator.push(context, _slideRoute(const ScanDetailScreen()));
+            Navigator.push(
+              context,
+              _slideRoute(ScanDetailScreen(ingredients: _recipeIngredients)),
+            );
             return;
           }
           if (index == 2) {

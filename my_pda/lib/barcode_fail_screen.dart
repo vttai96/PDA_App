@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class BarcodeFailScreen extends StatelessWidget {
-  const BarcodeFailScreen({super.key});
+  final String ingredientName;
+
+  const BarcodeFailScreen({
+    super.key,
+    this.ingredientName = 'Nguyên liệu đang quét',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +56,16 @@ class BarcodeFailScreen extends StatelessWidget {
                     'Tổng khối lượng quét đã vượt quá ngưỡng cho phép của công thức sản xuất.',
                     textAlign: TextAlign.center,
                     style: TextStyle(color: Color(0xFFE5E7EB), fontSize: 14),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Nguyên liệu: $ingredientName',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                   const SizedBox(height: 24),
                   _buildRetryButton(context),
@@ -156,6 +171,29 @@ class BarcodeFailScreen extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Nguyên liệu đang quét',
+                  style: TextStyle(color: Color(0xFF9CA3AF), fontSize: 14),
+                ),
+              ),
+              Expanded(
+                child: Text(
+                  ingredientName,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
           const Text(
