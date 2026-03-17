@@ -274,7 +274,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final response = await http
           .post(
             uri,
-            headers: {'Content-Type': 'application/json'},
+            headers: ApiConfig.defaultHeaders,
             body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 10)); // Tranh treo app
@@ -359,7 +359,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       final response = await http
           .post(
             uri,
-            headers: {'Content-Type': 'application/json'},
+            headers: ApiConfig.defaultHeaders,
             body: jsonEncode(requestBody),
           )
           .timeout(const Duration(seconds: 10));

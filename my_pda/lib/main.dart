@@ -3,6 +3,7 @@ import 'package:device_preview/device_preview.dart';
 import 'login_screen.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/datawedge_service.dart';
+import 'config/api_config.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,6 +15,7 @@ Future<void> main() async {
   }
 
   await DataWedgeService.instance.initialize();
+  await ApiConfig.loadSavedUrl();
 
   // runApp(
   //   DevicePreview(

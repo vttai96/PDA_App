@@ -281,7 +281,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       final response = await http
           .post(
             uri,
-            headers: {'Content-Type': 'application/json'},
+            headers: ApiConfig.defaultHeaders,
             body: requestJson,
           )
           .timeout(const Duration(seconds: 12));
@@ -357,7 +357,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     return http
         .post(
           uri,
-          headers: {'Content-Type': 'application/json'},
+          headers: ApiConfig.defaultHeaders,
           body: requestJson,
         )
         .timeout(const Duration(seconds: 12))
