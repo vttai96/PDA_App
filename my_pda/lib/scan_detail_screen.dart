@@ -92,6 +92,20 @@ class _IngredientScanRecord {
   });
 }
 
+class _IngredientProgressPayload {
+  final double actualQty;
+  final bool isCompleted;
+  final DateTime? lastScannedAt;
+  final List<_IngredientScanRecord> scans;
+
+  const _IngredientProgressPayload({
+    required this.actualQty,
+    required this.isCompleted,
+    required this.lastScannedAt,
+    required this.scans,
+  });
+}
+
 class ScanDetailScreen extends StatefulWidget {
   final List<IngredientModel> ingredients;
   final String? tankNumber;
@@ -126,6 +140,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   static const double _toleranceKg = 0.1;
 
   static const String _ingredientScanCompletePath = '/ingredient-scan/complete';
+  static const String _ingredientProgressPath = '/ingredient-scan/progress';
   static const String _tankCompletePath = '/tank-transfer/complete';
 
   late List<_IngredientConfig> _ingredients;
@@ -136,6 +151,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   StreamSubscription? _scanSubscription;
   bool _isProcessingScan = false;
   bool _isOpeningCompletion = false;
+  bool _isLoadingExistingProgress = false;
 
   void _logIngredientScan(String message) {
     debugPrint('[SCAN][DETAIL] $message');
@@ -150,6 +166,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
     super.initState();
     _resetIngredients();
     _bindScanner();
+    _loadExistingProgress();
   }
 
   @override
@@ -192,7 +209,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         targetQty: ing.quantity,
         unit: ing.unitOfMeasurement,
         scannedQty: 0,
-        subtitle: index == 0 ? 'Đang chờ quét...' : 'Chờ xử lý',
+        subtitle: index == 0 ? 'Äang chá» quÃ©t...' : 'Chá» xá»­ lÃ½',
       );
     });
 
@@ -298,6 +315,198 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       _logApi('ERROR $e');
       return false;
     }
+  }
+
+  double _toDouble(dynamic value) {
+    if (value is num) return value.toDouble();
+    if (value == null) return 0;
+    return double.tryParse(value.toString().replaceAll(',', '.')) ?? 0;
+  }
+
+  String _toText(dynamic value) => value?.toString().trim() ?? '';
+
+  DateTime? _toDateTime(dynamic value) {
+    final text = _toText(value);
+    if (text.isEmpty) return null;
+    return DateTime.tryParse(text);
+  }
+
+  Future<Map<String, _IngredientProgressPayload>> _fetchExistingProgress() async {
+    final tank = (widget.tankNumber ?? '').trim();
+    final po = (widget.productionOrder ?? '').trim();
+    final batch = (widget.batchNumber ?? '').trim();
+
+    if (tank.isEmpty || po.isEmpty || batch.isEmpty) {
+      _logApi('skip progress fetch: missing Tank/PO/Batch');
+      return const {};
+    }
+
+    final uri = ApiConfig.endpoint(_ingredientProgressPath);
+    final body = {
+      'TankNumber': tank,
+      'ProductionOrder': po,
+      'BatchNumber': batch,
+    };
+    final requestJson = jsonEncode(body);
+
+    _logApi('POST $uri');
+    _logApi('REQ $requestJson');
+
+    try {
+      final response = await http
+          .post(uri, headers: ApiConfig.defaultHeaders, body: requestJson)
+          .timeout(const Duration(seconds: 12));
+      _logApi('RES status=${response.statusCode}');
+      _logApi('RES body=${response.body}');
+
+      if (response.statusCode != 200) return const {};
+
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) return const {};
+      if (!_isSuccessResponse(decoded)) return const {};
+
+      final data = decoded['Data'];
+      if (data is! Map) return const {};
+
+      final normalizedData = Map<String, dynamic>.from(data);
+      final rowsRaw =
+          normalizedData['Ingredients'] ?? normalizedData['ingredients'] ?? const [];
+      if (rowsRaw is! List) return const {};
+
+      final result = <String, _IngredientProgressPayload>{};
+
+      for (final row in rowsRaw) {
+        if (row is! Map) continue;
+        final m = Map<String, dynamic>.from(row);
+        final ingredientCode = _toText(m['IngredientCode']).isNotEmpty
+            ? _toText(m['IngredientCode'])
+            : _toText(m['ingredientCode']);
+        if (ingredientCode.isEmpty) continue;
+
+        final scansRaw = m['Scans'] ?? m['scans'] ?? const [];
+        final scanRecords = <_IngredientScanRecord>[];
+        if (scansRaw is List) {
+          for (final scan in scansRaw) {
+            if (scan is! Map) continue;
+            final s = Map<String, dynamic>.from(scan);
+            final labelId = _toText(s['LabelId']).isNotEmpty
+                ? _toText(s['LabelId'])
+                : _toText(s['labelId']);
+            if (labelId.isEmpty) continue;
+
+            scanRecords.add(
+              _IngredientScanRecord(
+                itemCode: _toText(s['ItemCode']).isNotEmpty
+                    ? _toText(s['ItemCode'])
+                    : ingredientCode,
+                weight: _toDouble(s['Weight']),
+                lot: _toText(s['Lot']),
+                weightBatch: _toText(s['WeightBatch']).isNotEmpty
+                    ? _toText(s['WeightBatch'])
+                    : _toText(s['weightBatch']),
+                labelId: labelId,
+                scannedAt: _toDateTime(s['ScannedAt']) ?? DateTime.now(),
+              ),
+            );
+          }
+        }
+
+        scanRecords.sort((a, b) => a.scannedAt.compareTo(b.scannedAt));
+
+        final actualQty = _toDouble(m['ActualQty']) > 0
+            ? _toDouble(m['ActualQty'])
+            : scanRecords.fold<double>(0, (sum, r) => sum + r.weight);
+        final isCompleted = m['IsCompleted'] == true ||
+            m['Completed'] == true ||
+            _toText(m['Status']).toLowerCase() == 'completed';
+        final lastScannedAt =
+            _toDateTime(m['LastScannedAt']) ??
+            (scanRecords.isNotEmpty ? scanRecords.last.scannedAt : null);
+
+        result[ingredientCode.toUpperCase()] = _IngredientProgressPayload(
+          actualQty: actualQty,
+          isCompleted: isCompleted,
+          lastScannedAt: lastScannedAt,
+          scans: scanRecords,
+        );
+      }
+
+      _logApi('progress loaded ingredients=${result.length}');
+      return result;
+    } catch (e) {
+      _logApi('progress fetch error: $e');
+      return const {};
+    }
+  }
+
+  Future<void> _loadExistingProgress() async {
+    if (_ingredients.isEmpty) return;
+
+    setState(() {
+      _isLoadingExistingProgress = true;
+    });
+
+    final progressByCode = await _fetchExistingProgress();
+    if (!mounted) return;
+
+    if (progressByCode.isEmpty) {
+      setState(() {
+        _isLoadingExistingProgress = false;
+      });
+      return;
+    }
+
+    setState(() {
+      _scanRecordsByIngredient.clear();
+      _usedLabelIds.clear();
+
+      for (var i = 0; i < _ingredients.length; i++) {
+        final current = _ingredients[i];
+        final payload = progressByCode[current.code.trim().toUpperCase()];
+        if (payload == null) continue;
+
+        final restoredQty = payload.actualQty;
+        final overTarget = restoredQty > (current.targetQty + _toleranceKg);
+        final reached = payload.isCompleted ||
+            (restoredQty - current.targetQty).abs() <= _toleranceKg;
+
+        _scanRecordsByIngredient[i] = List<_IngredientScanRecord>.from(payload.scans);
+        for (final r in payload.scans) {
+          final normalized = r.labelId.trim().toUpperCase();
+          if (normalized.isNotEmpty) {
+            _usedLabelIds.add(normalized);
+          }
+        }
+
+        _ingredients[i] = current.copyWith(
+          type: overTarget
+              ? _IngredientType.warning
+              : (reached ? _IngredientType.completed : _IngredientType.neutral),
+          scannedQty: restoredQty,
+          subtitle: overTarget
+              ? 'Du lieu da luu vuot muc tieu, can kiem tra.'
+              : (reached
+                    ? 'Da dat ${restoredQty.toStringAsFixed(2)}/${current.targetQty.toStringAsFixed(2)} ${current.unit}'
+                    : 'Da quet ${restoredQty.toStringAsFixed(2)}/${current.targetQty.toStringAsFixed(2)} ${current.unit}'),
+          scannedAt: payload.lastScannedAt,
+        );
+      }
+
+      final next = _findNextIncompleteIndex();
+      _selectedIndex = next;
+      for (var i = 0; i < _ingredients.length; i++) {
+        final ing = _ingredients[i];
+        if (ing.type == _IngredientType.completed || ing.type == _IngredientType.warning) {
+          continue;
+        }
+        _ingredients[i] = ing.copyWith(
+          type: i == next ? _IngredientType.waiting : _IngredientType.neutral,
+          subtitle: i == next ? 'Dang cho quet...' : 'Cho xu ly',
+        );
+      }
+
+      _isLoadingExistingProgress = false;
+    });
   }
 
   Future<bool> _submitIngredientScanComplete(int ingredientIndex) async {
@@ -463,6 +672,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
 
   Future<void> _processIngredientScan(String raw) async {
     if (_isProcessingScan) return;
+    if (_isLoadingExistingProgress) return;
     _isProcessingScan = true;
 
     try {
@@ -479,7 +689,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           ingredientName: fallback.name,
           title: 'Sai định dạng',
           message:
-              'Mã cân theo mẫu: AIT01 <itemCode> <khối lượng> <Lot> <mẻ cân> <id tem>.',
+              'Mã cân theo mẫu: AIT01  <khối lượng> <Lot> <mẻ cân> <id tem>.',
         );
         return;
       }
@@ -509,7 +719,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
         _logIngredientScan('reject: ingredient idx=$currentIndex already completed');
         await _showFail(
           ingredientName: current.name,
-          title: 'Đã hoàn thành',
+          title: 'ÄÃ£ hoÃ n thÃ nh',
           message: 'Nguyên liệu này đã đạt khối lượng yêu cầu.',
         );
         return;
@@ -525,7 +735,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
               type: i == currentIndex
                   ? _IngredientType.waiting
                   : _IngredientType.neutral,
-              subtitle: i == currentIndex ? 'Đang chờ quét...' : 'Chờ xử lý',
+              subtitle: i == currentIndex ? 'Äang chá» quÃ©t...' : 'Chá» xá»­ lÃ½',
             );
           }
         });
@@ -571,7 +781,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           ingredientName: current.name,
           title: 'Vượt khối lượng',
           message:
-              'Tổng khối lượng vượt ngưỡng cho phép. Đã xóa bản ghi của nguyên liệu này để quét lại.',
+              'Tá»•ng khá»‘i lÆ°á»£ng vÆ°á»£t ngÆ°á»¡ng cho phÃ©p. ÄÃ£ xÃ³a báº£n ghi cá»§a nguyÃªn liá»‡u nÃ y Ä‘á»ƒ quÃ©t láº¡i.',
         );
         return;
       }
@@ -600,8 +810,8 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           scannedQty: nextScanned,
           type: reached ? _IngredientType.completed : _IngredientType.waiting,
           subtitle: reached
-              ? 'Đã đạt ${nextScanned.toStringAsFixed(2)}/${current.targetQty.toStringAsFixed(2)} ${current.unit}'
-              : 'Đã quét ${nextScanned.toStringAsFixed(2)}/${current.targetQty.toStringAsFixed(2)} ${current.unit}',
+              ? 'ÄÃ£ Ä‘áº¡t ${nextScanned.toStringAsFixed(2)}/${current.targetQty.toStringAsFixed(2)} ${current.unit}'
+              : 'ÄÃ£ quÃ©t ${nextScanned.toStringAsFixed(2)}/${current.targetQty.toStringAsFixed(2)} ${current.unit}',
           scannedAt: DateTime.now(),
         );
       });
@@ -629,7 +839,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           if (ing.type == _IngredientType.completed) continue;
           _ingredients[i] = ing.copyWith(
             type: i == next ? _IngredientType.waiting : _IngredientType.neutral,
-            subtitle: i == next ? 'Đang chờ quét...' : 'Chờ xử lý',
+            subtitle: i == next ? 'Äang chá» quÃ©t...' : 'Chá» xá»­ lÃ½',
           );
         }
       });
@@ -648,6 +858,13 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   }
 
   Future<void> _handleScanTap() async {
+    if (_isLoadingExistingProgress) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Đang tải tiến độ đã quét, vui lòng đợi.')),
+      );
+      return;
+    }
+
     if (_ingredients.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không có nguyên liệu để quét.')),
@@ -691,34 +908,22 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF111827),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        centerTitle: true,
-        title: const Text(
-          'Chi Tiết Công Thức',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        automaticallyImplyLeading: false,
+        toolbarHeight: 0, // Hide AppBar but keep status bar background
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTankHeaderCard(),
-            const SizedBox(height: 16),
-            Row(
+      body: Column(
+        children: [
+          // Pinned Metrics Region
+          Container(
+            color: const Color(0xFF111827),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Row(
               children: [
                 Expanded(
                   child: _MetricCard(
                     label: 'MỤC TIÊU',
                     value: totalTarget.toStringAsFixed(2),
-                    unit: 'kg',
+                    unit: 'Kgs',
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -726,7 +931,7 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                   child: _MetricCard(
                     label: 'HIỆN TẠI',
                     value: totalScanned.toStringAsFixed(2),
-                    unit: 'kg',
+                    unit: 'Kgs',
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -742,35 +947,47 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            _buildScanStatusCard(),
-            const SizedBox(height: 16),
-            const Text(
-              'Nguyên Liệu Yêu Cầu',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+          ),
+          // Scrollable content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildTankHeaderCard(),
+                  const SizedBox(height: 16),
+                  _buildScanStatusCard(),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Nguyên Liệu Yêu Cầu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_ingredients.isEmpty)
+                    const Text(
+                      'Không có dữ liệu ingredient.',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  for (var i = 0; i < _ingredients.length; i++) ...[
+                    GestureDetector(
+                      onTap: () => setState(() => _selectedIndex = i),
+                      child: _buildIngredientCard(
+                        ing: _ingredients[i],
+                        selected: _selectedIndex == i,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ],
               ),
             ),
-            const SizedBox(height: 12),
-            if (_ingredients.isEmpty)
-              const Text(
-                'Không có dữ liệu ingredient.',
-                style: TextStyle(color: Colors.white70),
-              ),
-            for (var i = 0; i < _ingredients.length; i++) ...[
-              GestureDetector(
-                onTap: () => setState(() => _selectedIndex = i),
-                child: _buildIngredientCard(
-                  ing: _ingredients[i],
-                  selected: _selectedIndex == i,
-                ),
-              ),
-              const SizedBox(height: 10),
-            ],
-          ],
-        ),
+          ),
+        ],
       ),
       bottomNavigationBar: SafeArea(
         top: false,
@@ -779,25 +996,26 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
           child: Row(
             children: [
               Expanded(
-                child: OutlinedButton(
+                child: OutlinedButton.icon(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Bỏ qua',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                  icon: const Icon(Icons.arrow_back_ios_new, size: 18),
+                  label: const Text(
+                    'Quay lại',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white70,
+                    side: const BorderSide(color: Colors.white24),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF334155),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
                   onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
@@ -805,10 +1023,19 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.keyboard, size: 20),
+                  icon: const Icon(Icons.keyboard_outlined, size: 20),
                   label: const Text(
-                    'Nhập thủ công',
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                    'Nhập T.Công',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: const BorderSide(color: Colors.white10),
+                    ),
                   ),
                 ),
               ),
@@ -820,58 +1047,145 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
   }
 
   Widget _buildTankHeaderCard() {
-    final tank = widget.tankNumber ?? '---';
-    final batch = widget.batchNumber ?? '---';
-    final po = widget.productionOrder ?? '---';
-    final recipeName = widget.recipeName ?? '---';
-    final recipeVersion = widget.recipeVersion ?? '---';
-    final productCode = widget.productCode ?? '---';
-    final productName = widget.productName ?? '---';
-    final shift = widget.shift ?? '---';
-    final plannedStart = widget.plannedStart ?? '---';
-
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.blue.withOpacity(0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.blue.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Tank: $tank',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.storage_outlined,
+                    color: Colors.blue, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'TANK: ${widget.tankNumber ?? ''}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 19,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'PO: ${widget.productionOrder ?? ''}',
+                      style: const TextStyle(
+                        color: Color(0xFF38BDF8),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      'Batch: ${widget.batchNumber ?? ''}',
+                      style: const TextStyle(
+                        color: Colors.orangeAccent,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 10),
+            child: Divider(color: Colors.white10, height: 1),
+          ),
+          _buildInfoRow(
+              Icons.inventory_2_outlined,
+              'Product',
+              '${widget.productCode ?? ''} - ${widget.productName ?? ''}'),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: _buildInfoRow(Icons.receipt_long_outlined, 'Recipe',
+                    widget.recipeName ?? ''),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                ),
+                child: Text(
+                  'Ver: ${widget.recipeVersion ?? ''}',
+                  style: const TextStyle(
+                    color: Colors.blue,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 6),
-          Text('Lo: $batch', style: const TextStyle(color: Colors.white70)),
-          Text('PO: $po', style: const TextStyle(color: Color(0xFF38BDF8))),
-          const SizedBox(height: 6),
-          Text(
-            'Product: $productCode - $productName',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          Text(
-            'Recipe: $recipeName v$recipeVersion',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-          Text(
-            'Shift: $shift | PlannedStart: $plannedStart',
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
+          _buildInfoRow(Icons.schedule_outlined, 'Planned',
+              widget.plannedStart ?? ''),
         ],
       ),
     );
   }
 
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, size: 16, color: Colors.white54),
+        ),
+        const SizedBox(width: 8),
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Text(
+            '$label: ',
+            style: const TextStyle(color: Colors.white54, fontSize: 13),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildScanStatusCard() {
     return InkWell(
-      onTap: _handleScanTap,
+      onTap: _isLoadingExistingProgress ? null : _handleScanTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
         width: double.infinity,
@@ -886,9 +1200,11 @@ class _ScanDetailScreenState extends State<ScanDetailScreen> {
             const SizedBox(width: 12),
             Expanded(
               child: Text(
-                _isProcessingScan
-                    ? 'Đang xử lý kết quả quét...'
-                    : 'Nhấn để mở máy quét',
+                _isLoadingExistingProgress
+                    ? 'Đang tải tiến độ đã quét...'
+                    : (_isProcessingScan
+                          ? 'Đang xử lý kết quả quét...'
+                          : 'Nhấn để mở máy quét'),
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,
@@ -990,7 +1306,7 @@ class _MetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: const Color(0xFF111827),
         borderRadius: BorderRadius.circular(12),
@@ -1008,27 +1324,32 @@ class _MetricCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                unit,
-                style: const TextStyle(color: Colors.white70, fontSize: 10),
-              ),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  unit,
+                  style: const TextStyle(color: Colors.white70, fontSize: 10),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+

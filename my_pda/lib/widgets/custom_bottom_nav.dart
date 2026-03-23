@@ -4,7 +4,11 @@ class CustomBottomNav extends StatelessWidget {
   final int selectedIndex;
   final ValueChanged<int>? onTap;
 
-  const CustomBottomNav({super.key, this.selectedIndex = 0, this.onTap});
+  const CustomBottomNav({
+    super.key,
+    this.selectedIndex = 0,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -34,13 +38,6 @@ class CustomBottomNav extends StatelessWidget {
               color: selectedIndex == 2 ? Colors.blue : Colors.white,
             ),
             onPressed: () => onTap?.call(2),
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.settings,
-              color: selectedIndex == 3 ? Colors.blue : Colors.white,
-            ),
-            onPressed: () => onTap?.call(3),
           ),
         ],
       ),

@@ -14,6 +14,11 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _urlController;
   bool _isSaving = false;
+  bool get _canManageApiSettings {
+    final raw = (widget.user?['roleLevel'] ?? '').toString().trim();
+    final level = int.tryParse(raw) ?? 0;
+    return level > 9000;
+  }
 
   @override
   void initState() {
@@ -138,7 +143,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ],
 
             const SizedBox(height: 20),
-
+            if (_canManageApiSettings) ...[
             // ── Cấu hình API ──
             const Text(
               'CẤU HÌNH API',
@@ -224,6 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
             ),
+            ],
 
             const SizedBox(height: 32),
 
@@ -297,3 +303,4 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 }
+

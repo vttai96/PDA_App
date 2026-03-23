@@ -41,6 +41,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     debugPrint('[SCAN][DASHBOARD] $message');
   }
 
+  void _logApi(String message) {
+    debugPrint('[API][DASHBOARD] $message');
+  }
+
   @override
   void initState() {
     super.initState();
@@ -269,15 +273,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       debugPrint('>>> Đang quét mã Tank: $code');
       final requestBody = {'TankNumber': code};
       final uri = ApiConfig.endpoint('/getTankInfo');
+      final req = jsonEncode(requestBody);
+      _logApi('POST $uri');
+      _logApi('REQ $req');
       debugPrint('API URL [/getTankInfo]: $uri');
       debugPrint('API Request [/getTankInfo]: ${jsonEncode(requestBody)}');
       final response = await http
           .post(
             uri,
             headers: ApiConfig.defaultHeaders,
-            body: jsonEncode(requestBody),
+            body: req,
           )
           .timeout(const Duration(seconds: 10)); // Tranh treo app
+      _logApi('RES status=${response.statusCode}');
+      _logApi('RES body=${response.body}');
 
       if (response.statusCode == 200) {
         debugPrint('API Response [/getTankInfo]: ${response.body}');
@@ -292,6 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (payload is! Map) {
           debugPrint('getTankInfo fail: Data phải là object.');
           return {};
+
         }
         final data = Map<String, dynamic>.from(payload);
 
@@ -354,15 +364,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
       );
       final requestBody = {'ProductionOrder': po, 'BatchNumber': batch};
       final uri = ApiConfig.endpoint('/getRecipeDetails');
+      final req = jsonEncode(requestBody);
+      _logApi('POST $uri');
+      _logApi('REQ $req');
       debugPrint('API URL [/getRecipeDetails]: $uri');
       debugPrint('API Request [/getRecipeDetails]: ${jsonEncode(requestBody)}');
       final response = await http
           .post(
             uri,
             headers: ApiConfig.defaultHeaders,
-            body: jsonEncode(requestBody),
+            body: req,
           )
           .timeout(const Duration(seconds: 10));
+      _logApi('RES status=${response.statusCode}');
+      _logApi('RES body=${response.body}');
 
       if (response.statusCode == 200) {
         debugPrint('API Response [/getRecipeDetails]: ${response.body}');
@@ -427,10 +442,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  Navigator.push(
-                    context,
-                    _slideRoute(SettingsScreen(user: widget.user)),
-                  );
+                  Navigator.push(context, _slideRoute(SettingsScreen(user: widget.user)));
                 },
                 child: Container(
                   width: 44,
@@ -497,57 +509,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 4),
-            const Text(
-              'Bảng Điều Khiển',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            if ((_currentTankNumber ?? '').isNotEmpty) ...[
-              SizedBox(height: compactDashboard ? 6 : 8),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.all(compactDashboard ? 8 : 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFF1F2937)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Tank: ${_currentTankNumber ?? ''} | PO: ${_currentProductionOrder ?? ''} | Batch: ${_currentBatchNumber ?? ''}',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: compactDashboard ? 11 : 12,
-                      ),
-                    ),
-                    SizedBox(height: compactDashboard ? 2 : 4),
-                    Text(
-                      'Product: ${_currentProductCode ?? ''} - ${_currentProductName ?? ''}',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: compactDashboard ? 11 : 12,
-                      ),
-                    ),
-                    Text(
-                      'Recipe: ${_currentRecipeName ?? ''} v${_currentRecipeVersion ?? ''} | Shift: ${_currentShift ?? ''} | Planned: ${_currentPlannedStart ?? ''}',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: compactDashboard ? 11 : 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            // --- 1. Current Shift Info (Moved to top) ---
             Builder(
               builder: (context) {
-                // Example data; replace with dynamic values as needed
                 final shiftInfo = _currentShiftInfo();
                 final bool isRunning =
                     (_currentShift ?? '').toUpperCase() != 'OFF';
@@ -556,13 +520,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                 return Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(0),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0E1620),
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.3),
+                        color: Colors.black.withOpacity(0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -570,7 +533,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   child: Row(
                     children: [
-                      // left accent (only green when running)
                       Container(
                         width: 6,
                         height: compactDashboard ? 68 : 84,
@@ -619,7 +581,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  // custom status pill
                                   Container(
                                     padding: EdgeInsets.symmetric(
                                       horizontal: compactDashboard ? 10 : 12,
@@ -631,11 +592,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           : const Color(0xFF23303A),
                                       border: Border.all(
                                         color: isRunning
-                                            ? Colors.greenAccent.withValues(
-                                                alpha: 0.4,
+                                            ? Colors.greenAccent.withOpacity(
+                                                0.4,
                                               )
-                                            : Colors.grey.withValues(
-                                                alpha: 0.4,
+                                            : Colors.grey.withOpacity(
+                                                0.4,
                                               ),
                                         width: 1.5,
                                       ),
@@ -643,17 +604,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                     child: Row(
                                       children: [
-                                        // small green dot
                                         Container(
                                           width: 8,
                                           height: 8,
                                           decoration: BoxDecoration(
                                             color: isRunning
-                                                ? Colors.greenAccent.withValues(
-                                                    alpha: 0.4,
+                                                ? Colors.greenAccent.withOpacity(
+                                                    0.4,
                                                   )
-                                                : Colors.grey.withValues(
-                                                    alpha: 0.4,
+                                                : Colors.grey.withOpacity(
+                                                    0.4,
                                                   ),
                                             shape: BoxShape.circle,
                                           ),
@@ -672,7 +632,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ),
                                   SizedBox(height: compactDashboard ? 6 : 8),
-                                  // shift time below
                                   Text(
                                     shiftTime,
                                     style: TextStyle(
@@ -691,154 +650,106 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
               },
             ),
-            SizedBox(height: compactDashboard ? 6 : 8),
-            Row(
-              children: [
-                // Completed card
-                Expanded(
-                  child: Container(
-                    height: compactDashboard ? 94 : 120,
-                    margin: EdgeInsets.only(right: compactDashboard ? 6 : 8),
-                    padding: EdgeInsets.all(compactDashboard ? 10 : 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F1724),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'ĐÃ HOÀN THÀNH',
-                                style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: compactDashboard ? 11 : 12,
-                                ),
-                              ),
-                            ),
-                            Container(
-                              width: 28,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0B1620),
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: const Icon(
-                                Icons.check_circle,
-                                size: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          '12',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: compactDashboard ? 22 : 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: compactDashboard ? 6 : 8),
-                        // progress bar
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: 0.6,
-                            minHeight: 6,
-                            backgroundColor: const Color(0xFF071018),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.greenAccent,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+            const SizedBox(height: 16),
 
-                // Waiting tasks card
-                Expanded(
-                  child: Container(
-                    height: compactDashboard ? 94 : 120,
-                    margin: EdgeInsets.only(left: compactDashboard ? 6 : 8),
-                    padding: EdgeInsets.all(compactDashboard ? 10 : 12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF0F1724),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.35),
-                          blurRadius: 10,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+            // --- 2. Redesigned Tank Information ---
+            if (hasTankInfo) ...[
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF111827),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.blue.withOpacity(0.3),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withOpacity(0.1),
+                      blurRadius: 15,
+                      offset: const Offset(0, 8),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                'CÔNG VIỆC CHỜ',
+                        Container(
+                          padding: EdgeInsets.all(hasTankInfo ? 8 : 10),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(Icons.storage,
+                              color: Colors.blue, size: hasTankInfo ? 24 : 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'TANK: ${_currentTankNumber ?? ''}',
                                 style: TextStyle(
-                                  color: Colors.grey[400],
-                                  fontSize: compactDashboard ? 11 : 12,
+                                  color: Colors.white,
+                                  fontSize: hasTankInfo ? 20 : 22,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
                                 ),
                               ),
-                            ),
-                            Container(
-                              width: 28,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF0B1620),
-                                borderRadius: BorderRadius.circular(6),
+                              const SizedBox(height: 2),
+                              Text(
+                                'PO: ${_currentProductionOrder ?? ''}',
+                                style: const TextStyle(
+                                  color: Colors.blueAccent,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              child: const Icon(
-                                Icons.more_horiz,
-                                size: 16,
-                                color: Colors.white54,
+                              Text(
+                                'Batch: ${_currentBatchNumber ?? ''}',
+                                style: const TextStyle(
+                                  color: Colors.orangeAccent,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          '5',
-                          style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: compactDashboard ? 22 : 28,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: compactDashboard ? 6 : 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: 0.25,
-                            minHeight: 6,
-                            backgroundColor: const Color(0xFF071018),
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.orange,
-                            ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 8),
+                      child: Divider(color: Colors.white10, height: 1),
+                    ),
+                    _buildTankDetailRow(
+                        Icons.inventory_2_outlined,
+                        'Product',
+                        '${_currentProductCode ?? ''} - ${_currentProductName ?? ''}'),
+                    const SizedBox(height: 6),
+                    _buildTankDetailRow(
+                        Icons.receipt_long_outlined,
+                        'Recipe',
+                        '${_currentRecipeName ?? ''}'),
+                    const SizedBox(height: 6),
+                    _buildTankDetailRow(
+                        Icons.numbers_outlined,
+                        'Version',
+                        '${_currentRecipeVersion ?? ''}'),
+                    const SizedBox(height: 6),
+                    _buildTankDetailRow(Icons.schedule_outlined, 'Planned',
+                        _currentPlannedStart ?? ''),
+                  ],
                 ),
-              ],
-            ),
-            SizedBox(height: compactDashboard ? 6 : 8),
+              ),
+              const SizedBox(height: 16),
+            ],
+
             // Big scan card (styled with corner markers, circular icon and pill)
             Expanded(
               child: Center(
@@ -853,7 +764,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.25),
+                            color: Colors.black.withOpacity(0.25),
                             blurRadius: 12,
                             offset: const Offset(0, 6),
                           ),
@@ -954,18 +865,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Container(
-                                  width: hasTankInfo ? 78 : 100,
-                                  height: hasTankInfo ? 78 : 100,
+                                  width: hasTankInfo ? 64 : 100,
+                                  height: hasTankInfo ? 64 : 100,
                                   margin: EdgeInsets.only(
-                                    bottom: hasTankInfo ? 8 : 12,
+                                    bottom: hasTankInfo ? 4 : 12,
                                   ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF3EA0FF),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.25,
+                                        color: Colors.black.withOpacity(
+                                          0.25,
                                         ),
                                         blurRadius: 10,
                                         offset: const Offset(0, 6),
@@ -975,12 +886,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   child: Center(
                                     child: Icon(
                                       Icons.qr_code_scanner,
-                                      size: hasTankInfo ? 30 : 36,
+                                      size: hasTankInfo ? 26 : 36,
                                       color: Colors.white,
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: hasTankInfo ? 2 : 4),
+                                SizedBox(height: hasTankInfo ? 1 : 4),
                                 ConstrainedBox(
                                   constraints: const BoxConstraints(
                                     maxWidth: double.infinity,
@@ -993,14 +904,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       overflow: TextOverflow.ellipsis,
                                       style: TextStyle(
                                         color: Colors.white,
-                                        fontSize: hasTankInfo ? 17 : 24,
+                                        fontSize: hasTankInfo ? 16 : 24,
                                         fontWeight: FontWeight.bold,
-                                        letterSpacing: hasTankInfo ? 1.2 : 5.0,
+                                        letterSpacing: hasTankInfo ? 1.0 : 5.0,
                                       ),
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: hasTankInfo ? 4 : 5),
+                                SizedBox(height: hasTankInfo ? 2 : 5),
                                 AnimatedSwitcher(
                                   duration: const Duration(milliseconds: 220),
                                   child: _isLoadingIngredients
@@ -1008,7 +919,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           key: const ValueKey('loading-state'),
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 18,
-                                            vertical: 8,
+                                            vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF1D63C9),
@@ -1043,7 +954,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                           key: const ValueKey('idle-state'),
                                           padding: EdgeInsets.symmetric(
                                             horizontal: hasTankInfo ? 18 : 40,
-                                            vertical: 8,
+                                            vertical: hasTankInfo ? 6 : 8,
                                           ),
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF1D63C9),
@@ -1051,13 +962,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                               20,
                                             ),
                                           ),
-                                          child: const Text(
-                                            'Nhấn để mở máy quét',
-                                            style: TextStyle(
-                                              color: Colors.white70,
-                                              fontSize: 14,
-                                            ),
-                                          ),
+                                          child: const SizedBox.shrink(),
                                         ),
                                 ),
                               ],
@@ -1113,15 +1018,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
             );
             return;
           }
-          if (index == 3) {
-            Navigator.push(
-              context,
-              _slideRoute(SettingsScreen(user: widget.user)),
-            );
-            return;
-          }
         },
       ),
+    );
+  }
+
+  Widget _buildTankDetailRow(IconData icon, String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Icon(icon, color: Colors.blue.withOpacity(0.6), size: 16),
+        ),
+        const SizedBox(width: 8),
+        Padding(
+          padding: const EdgeInsets.only(top: 1),
+          child: Text(
+            '$label: ',
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
