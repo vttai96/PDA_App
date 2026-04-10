@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'config/api_config.dart';
-import 'login_screen.dart';
+import 'package:my_pda/core/config/api_config.dart';
+import 'package:my_pda/presentation/screens/auth/login_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:my_pda/logic/providers/auth_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
-  final Map<String, String?>? user;
-
-  const SettingsScreen({super.key, this.user});
+  const SettingsScreen({super.key});
 
   @override
   State<SettingsScreen> createState() => _SettingsScreenState();
@@ -15,7 +15,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   late final TextEditingController _urlController;
   bool _isSaving = false;
   bool get _canManageApiSettings {
-    final raw = (widget.user?['roleLevel'] ?? '').toString().trim();
+    final raw = (context.read<AuthProvider>().userRoleLevel).toString().trim();
     final level = int.tryParse(raw) ?? 0;
     return level > 9000;
   }
@@ -56,8 +56,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final String name = widget.user?['name'] ?? 'Người dùng';
-    final String role = widget.user?['role'] ?? '';
+    final user = context.watch<AuthProvider>().user;
+    final String name = user?['name'] ?? 'Người dùng';
+    final String role = user?['role'] ?? '';
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F1720),
@@ -249,6 +250,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
                 onPressed: () {
+                  context.read<AuthProvider>().logout();
                   Navigator.of(context).pushAndRemoveUntil(
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                     (route) => false,

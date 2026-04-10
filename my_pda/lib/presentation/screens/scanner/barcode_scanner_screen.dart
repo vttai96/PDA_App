@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'barcode_success_screen.dart';
-import 'services/datawedge_service.dart';
+import 'package:my_pda/presentation/screens/scanner/barcode_success_screen.dart';
+import 'package:my_pda/data/services/datawedge_service.dart';
 
 class BarcodeScannerScreen extends StatefulWidget {
   final bool fromDashboard;

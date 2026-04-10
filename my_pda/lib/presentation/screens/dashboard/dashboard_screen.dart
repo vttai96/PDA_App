@@ -1,20 +1,21 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:my_pda/models/ingredient.dart';
-import 'widgets/custom_bottom_nav.dart';
-import 'history_screen.dart';
-import 'settings_screen.dart';
-import 'scan_detail_screen.dart';
-import 'barcode_scanner_screen.dart';
+import 'package:my_pda/data/models/ingredient.dart';
+import 'package:my_pda/presentation/widgets/custom_bottom_nav.dart';
+import 'package:my_pda/presentation/screens/history/history_screen.dart';
+import 'package:my_pda/presentation/screens/settings/settings_screen.dart';
+import 'package:my_pda/presentation/screens/scanner/scan_detail_screen.dart';
+import 'package:my_pda/presentation/screens/scanner/barcode_scanner_screen.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'config/api_config.dart';
-import 'services/datawedge_service.dart';
+import 'package:my_pda/core/config/api_config.dart';
+import 'package:my_pda/data/services/datawedge_service.dart';
+import 'package:provider/provider.dart';
+import 'package:my_pda/logic/providers/auth_provider.dart';
+import 'package:my_pda/logic/providers/scanner_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
-  final Map<String, String?>? user;
-
-  const DashboardScreen({super.key, this.user});
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -58,7 +59,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _bindGlobalScanner() {
-    _scanSubscription = DataWedgeService.instance.scanStream.listen((result) {
+    _scanSubscription = context.read<ScannerProvider>().scanStream.listen((result) {
       if (!mounted) return;
       final route = ModalRoute.of(context);
       if (route == null || !route.isCurrent) return;
@@ -74,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _triggerSoftScanFromDashboard() async {
     if (DataWedgeService.instance.isSupported) {
-      await DataWedgeService.instance.softTrigger();
+      await context.read<ScannerProvider>().softTrigger();
       return;
     }
 
@@ -428,6 +429,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
     final hasTankInfo = (scannedCode ?? '').trim().isNotEmpty;
     final compactDashboard = hasTankInfo;
 
@@ -442,7 +444,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               cursor: SystemMouseCursors.click,
               child: GestureDetector(
                 onTap: () {
-                  Navigator.push(context, _slideRoute(SettingsScreen(user: widget.user)));
+                  Navigator.push(context, _slideRoute(const SettingsScreen()));
                 },
                 child: Container(
                   width: 44,
@@ -466,16 +468,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    widget.user?['name'] ?? 'Người dùng',
+                    user?['name'] ?? 'Người dùng',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  if ((widget.user?['role'] ?? '').isNotEmpty)
+                  if ((user?['role'] ?? '').isNotEmpty)
                     Text(
-                      widget.user?['role'] ?? '',
+                      user?['role'] ?? '',
                       style: const TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                 ],
@@ -1014,7 +1016,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           if (index == 2) {
             Navigator.push(
               context,
-              _slideRoute(HistoryScreen(user: widget.user)),
+              _slideRoute(const HistoryScreen()),
             );
             return;
           }

@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
-import 'config/api_config.dart';
-import 'dashboard_screen.dart';
-import 'services/update_service.dart';
+import 'package:my_pda/core/config/api_config.dart';
+import 'package:my_pda/presentation/screens/dashboard/dashboard_screen.dart';
+import 'package:my_pda/data/services/update_service.dart';
+import 'package:provider/provider.dart';
+import 'package:my_pda/logic/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -314,16 +316,15 @@ class _LoginScreenState extends State<LoginScreen> {
       final input = _adminPasswordController.text.trim();
 
       if (input == envPassword) {
+        context.read<AuthProvider>().login(const {
+          'id': 'LOCAL_ADMIN',
+          'name': 'Admin',
+          'role': 'Quản lý hệ thống',
+          'roleLevel': '99999',
+        });
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (_) => DashboardScreen(
-              user: const {
-                'id': 'LOCAL_ADMIN',
-                'name': 'Admin',
-                'role': 'Quản lý hệ thống',
-                'roleLevel': '99999',
-              },
-            ),
+            builder: (_) => const DashboardScreen(),
           ),
         );
       } else {
@@ -406,8 +407,9 @@ class _LoginScreenState extends State<LoginScreen> {
         'roleLevel': roleLevel,
       };
 
+      context.read<AuthProvider>().login(userToDashboard);
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => DashboardScreen(user: userToDashboard)),
+        MaterialPageRoute(builder: (_) => const DashboardScreen()),
       );
     } catch (e) {
       _logApi('ERROR _submitPin: $e');

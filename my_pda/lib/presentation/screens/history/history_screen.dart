@@ -4,17 +4,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'barcode_scanner_screen.dart';
-import 'config/api_config.dart';
-import 'history_detail_screen.dart';
-import 'scan_detail_screen.dart';
-import 'services/datawedge_service.dart';
-import 'widgets/custom_bottom_nav.dart';
+import 'package:my_pda/presentation/screens/scanner/barcode_scanner_screen.dart';
+import 'package:my_pda/core/config/api_config.dart';
+import 'package:my_pda/presentation/screens/history/history_detail_screen.dart';
+import 'package:my_pda/presentation/screens/scanner/scan_detail_screen.dart';
+import 'package:my_pda/data/services/datawedge_service.dart';
+import 'package:my_pda/presentation/widgets/custom_bottom_nav.dart';
+import 'package:provider/provider.dart';
+import 'package:my_pda/logic/providers/scanner_provider.dart';
 
 class HistoryScreen extends StatefulWidget {
-  final Map<String, String?>? user;
-
-  const HistoryScreen({super.key, this.user});
+  const HistoryScreen({super.key});
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -49,7 +49,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _bindScanner() {
-    _scanSubscription = DataWedgeService.instance.scanStream.listen((result) {
+    _scanSubscription = context.read<ScannerProvider>().scanStream.listen((result) {
       if (!mounted) return;
       final route = ModalRoute.of(context);
       if (route == null || !route.isCurrent) return;
@@ -218,7 +218,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _triggerScan() async {
     if (DataWedgeService.instance.isSupported) {
-      await DataWedgeService.instance.softTrigger();
+      await context.read<ScannerProvider>().softTrigger();
       return;
     }
 

@@ -5,7 +5,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import '../config/api_config.dart';
+import 'package:my_pda/core/config/api_config.dart';
 
 class UpdateInfo {
   final bool hasUpdate;

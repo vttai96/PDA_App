@@ -4,13 +4,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'barcode_fail_screen.dart';
-import 'barcode_scanner_screen.dart';
-import 'config/api_config.dart';
-import 'manual_confirm_screen.dart';
-import 'models/ingredient.dart';
-import 'scan_complete_screen.dart';
-import 'services/datawedge_service.dart';
+import 'package:my_pda/presentation/screens/scanner/barcode_fail_screen.dart';
+import 'package:my_pda/presentation/screens/scanner/barcode_scanner_screen.dart';
+import 'package:my_pda/core/config/api_config.dart';
+import 'package:my_pda/presentation/screens/scanner/manual_confirm_screen.dart';
+import 'package:my_pda/data/models/ingredient.dart';
+import 'package:my_pda/presentation/screens/scanner/scan_complete_screen.dart';
+import 'package:my_pda/data/services/datawedge_service.dart';
 
 enum _IngredientType { completed, waiting, neutral, warning }
 
